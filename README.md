@@ -8,6 +8,7 @@
  * __Process Mining Pipeline: Workflow__
  * __Stack & Installation/Configuration Requirements__
  * __Maintainers__
+ * __Backlog (Shared Doc Link)__
  * __Troubleshooting__
 
 
@@ -88,6 +89,11 @@ dependencies:
 - Prof. Dr. Ahmed Awad	ahmed.awad@ut.ee 
 - Belal Mohammad: 	B.Mohammed@nu.edu.eg
 - Fabiano Spiga:	fabiano.spiga@ut.ee
+
+## BACKLOG (SHARED DOC LINK)
+
+[Backlog (Shared Doc)](https://docs.google.com/document/d/10l2CjnfpslwH4a8O3JncVBYHZEJd9KoXMQYM8iqlrGI/edit)
+
 
 </br>
 
