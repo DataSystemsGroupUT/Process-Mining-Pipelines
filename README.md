@@ -1,4 +1,4 @@
-# README.m
+# README.md
 
 ## CONTENTS
 
