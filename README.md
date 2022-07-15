@@ -27,15 +27,15 @@
 2. database:
 	- Neo4J graph db (via database .jar connector)
 3. data analysis:
-	- distributed analytical engine, i.e., Apache Spark
-		- interface: PySpark
+	- distributed analytical engine
+		- interface: Dask
 	- PM4Py Process Mining algorithms (Python-based package)
 
 
 ## PROCESS MINING PIPELINE: WORKFLOW
 
 - log files, i.e., *.csv* files
-	- Apache Spark via PySpark interface
+	- Pass it to Dask Dataframe
 		- data partitioning (by case ID) and time windowing (by timestamps)
 			- Directly-Follows Graph schema, i.e., *predecessor(s)* and *successor(s)* nodes
 				- WRITE queries to a Neo4J graph database
@@ -48,47 +48,28 @@
 									- plotting of evaluation metrics via comparative charts from the dataframes - derived by converting Resilient Distributed Database (RDD)s to Pandas
  
 
-## STACK & INSTALLATION/CONFIGURATION REQUIREMENTS
+## HOW TO SETUP AND RUN THE ENVIRONMENT LOCALLY
 
-### System config:
-
-- pySpark vs. 2.4.6
-- Java JVM vs. 8
-- Scala vs. 2.13
-
-### YAML file for setting Conda and Jupyter notebook environment:
-
-<pre>
-
-name: pyspark-vs2
-channels:
-  - defaults
-dependencies:
-  - pip=20.2.4
-  - python=3.7.9
-  - pip:
-    - matplotlib==3.3.4
-    - numpy==1.20.0
-    - pandas==1.2.1
-    - pm4py==2.2.5
-    - py4j==0.10.9.1
-    - pydotplus==2.0.2
-    - pyspark==2.4.7
-    - python-graphviz==0.8.4
-
-</pre>
-
-</br>
-
-#### NOTE: if some packages are missing in the required version, try installing from `pip` or from Conda-forge: `$ conda install -c conda-forge [pkg_name]`
-
+1. First you need to build the docker image on your end and make it up and running
+```
+docker-compose up -d
+```
+2. In case you need to open Anaconda in your browser, please find the url that starts with **127.0.0.1:8888** from the logs and click on it to open it in your browser.
+you can find the logs through the following command:
+```
+docker-compose logs anaconda
+```
+3. Run the python file inside the anaconda service of the docker
+```
+cat dask-pipeline.py | docker-compose exec -T anaconda python
+```
+4. This step is bonus if you only want to interpret python files from pyCharm with the python of the docker image, just follow this [url](https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html#run)
 
 ## CONTRIBUTORS/MAINTAINERS
 
 
 - Prof. Dr. Ahmed Awad	ahmed.awad@ut.ee 
 - Belal Mohammad: 	B.Mohammed@nu.edu.eg
-- Fabiano Spiga:	fabiano.spiga@ut.ee
 
 ## BACKLOG (SHARED DOC LINK)
 
