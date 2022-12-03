@@ -1,6 +1,6 @@
 def getNeo4jCredentials():
     return {
-        "host": "bolt://184.72.205.146:7687",
+        "host": "bolt://44.202.184.245:7687",
         "user": "neo4j",
-        "password": "importance-eraser-characters"
+        "password": "effort-yells-hinges"
     }

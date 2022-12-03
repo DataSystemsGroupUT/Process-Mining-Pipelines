@@ -11,6 +11,7 @@ services:
        - ./data:/opt/project/data
     ports:
       - "8888:8888"
+      - "8787:8787"
     command:
       /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='0.0.0.0' --port=8888 --no-browser --allow-root
     tty: true

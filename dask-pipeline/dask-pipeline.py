@@ -2,6 +2,8 @@ from config.credentials import getNeo4jCredentials
 from utils.helper import setLinks
 from utils.graph import addActivity
 import dask.dataframe as dd
+from dask.distributed import Client, get_worker
+from dask.dataframe.utils import make_meta
 from neo4j import GraphDatabase
 
 if __name__ == '__main__':
@@ -10,14 +12,45 @@ if __name__ == '__main__':
         'case:Includes_subCases': 'string',
         'case:Responsible_actor': 'string',
         'case:caseProcedure': 'string',
-        'dateStop': 'string'
+        'dateStop': 'string',
     }
+    client = Client()
     df = dd.read_csv('data/BPIC15_1.csv', dtype=columnTypes)
-    df = df.sort_values(by='time:timestamp').groupby('case:concept:name').apply(setLinks)
+    df['successor'] = ''
+    df['predecessor'] = ''
+    df = df.sort_values(by='time:timestamp').groupby('case:concept:name').apply(setLinks, meta=df)
 
     creds = getNeo4jCredentials()
     driver = GraphDatabase.driver(creds.get('host'), auth=(creds.get('user'), creds.get('password')))
 
-    with driver.session() as session:
-        df['activityNameEN'].unique().apply(lambda activityName: session.write_transaction(addActivity, activityName), meta=('activityNameEN', 'object'))
-    session.close()
+    result = df['activityNameEN'].unique()
+
+
+    def connect_worker_db():
+        creds = getNeo4jCredentials()
+        worker = get_worker()
+        worker.driver = GraphDatabase.driver(creds.get('host'), auth=(creds.get('user'), creds.get('password')))
+
+
+    client.register_worker_callbacks(connect_worker_db)
+
+    def experiment():
+        driver = get_worker().driver
+        with driver.session() as session:
+            result.apply(lambda activityName: addActivity(session, activityName),
+                         meta=('activityNameEN', 'object')).compute()
+        session.close()
+        driver.close()
+        return 'done'
+
+
+    result = client.submit(experiment)
+    result.result()
+    # # needs to be refactored and run in dask instead
+    # with driver.session() as session:
+    #     result.apply(lambda activityName: addActivity(session, activityName), meta=('activityNameEN', 'object')).compute()
+    #     # for activityName in result.iteritems():
+    #     #     session.write_transaction(addActivity, activityName[1])
+    # session.close()
+    #
+    # driver.close()
