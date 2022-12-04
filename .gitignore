@@ -1,3 +1,7 @@
 data/*
 .idea
 .ipynb_checkpoints
+.pyc
+.dill
+__pycache__/*
+dask-worker-space/*

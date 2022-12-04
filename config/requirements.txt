@@ -8,3 +8,4 @@ neo4j
 pm4py
 neo4j
 dill
+jupyter-server-proxy
