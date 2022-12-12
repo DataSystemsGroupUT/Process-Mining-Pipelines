@@ -5,3 +5,4 @@ data/*
 .dill
 __pycache__/*
 dask-worker-space/*
+logs
