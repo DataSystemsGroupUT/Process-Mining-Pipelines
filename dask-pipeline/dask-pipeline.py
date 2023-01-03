@@ -1,10 +1,19 @@
+import dask
+import os
+import time
+
+import dask.dataframe as dd
+from dask.dataframe.utils import make_meta
+from dask.distributed import Client, LocalCluster, get_worker
+
+from neo4j import GraphDatabase
+from neo4j.exceptions import ClientError
+
+from tqdm import tqdm
+
 from config.credentials import getNeo4jCredentials
 from utils.helper import setLinks
 from utils.graph import addActivity
-import dask.dataframe as dd
-from dask.distributed import Client, get_worker
-from dask.dataframe.utils import make_meta
-from neo4j import GraphDatabase
 
 if __name__ == '__main__':
     columnTypes = {
@@ -12,7 +21,7 @@ if __name__ == '__main__':
         'case:Includes_subCases': 'string',
         'case:Responsible_actor': 'string',
         'case:caseProcedure': 'string',
-        'dateStop': 'string',
+        'dateStop': 'string'
     }
     client = Client()
     df = dd.read_csv('data/BPIC15_1.csv', dtype=columnTypes)
