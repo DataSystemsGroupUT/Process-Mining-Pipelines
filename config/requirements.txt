@@ -5,7 +5,8 @@ pandas
 scipy
 pyarrow
 neo4j
-pm4py
+pm4py[2.2.5]
 neo4j
 dill
 jupyter-server-proxy
+graphviz
