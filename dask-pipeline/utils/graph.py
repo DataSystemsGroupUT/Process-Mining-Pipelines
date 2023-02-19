@@ -1,21 +1,25 @@
+from .graph_driver import graph_driver
+from pm4py import discover_dfg_typed as dfg_discovery
 class Dask_DFG():
 
-    def getQueries(activities):
+    def getDFGQueries(self, dfg):
         listOfQueries = []
         queryTemplate = """
-            MERGE (a:Activity {{name: '{activity}'}})
-            MERGE (s:Activity {{name: '{successor}'}})
-            MERGE (a)-[r:PRODUCES {{cost: '{cost}'}}]->(s)
+            MERGE (p:Activity {{name: '{parent}'}})
+            MERGE (c:Activity {{name: '{child}'}})
+            MERGE (p)-[r:PRODUCES]->(c)
+            ON CREATE SET r.frequency={frequency}
+            ON MATCH SET r.frequency=r.frequency+{frequency}
         """
-        for index, record in activities.iterrows():
-            template = queryTemplate.format(activity=record['activityNameEN'], successor=record['successor'], cost=1)
+        for parent, child in dfg:
+            frequency = dfg[(parent, child)]
+            template = queryTemplate.format(parent=parent, child=child, frequency=frequency)
             listOfQueries.append(template)
         return listOfQueries
 
-    def saveActivities(activities):
-        read_queries_start_time = time.time()
-        activitiesQueries = getQueries(activities)
+    def saveDFG(self, dfg):
+        dfgResult = dfg_discovery(dfg)
+        dfgQuery = self.getDFGQueries(dfgResult.graph)
         neo4jConnection = graph_driver(uri_scheme="neo4j", host="neo4j", password="123456")
-        result = neo4jConnection.run_bulk_query(activitiesQueries)
-        read_queries_time = time.time() - read_queries_start_time
-        print("----Finshed saving nodes: in {time}".format(time=str(read_queries_time)))
+        result = neo4jConnection.run_bulk_query(dfgQuery)
+        return dfgResult

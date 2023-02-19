@@ -1,5 +1,18 @@
-# this function is responsible for setting the parent(predecessor) and child(successor) for each element of a grouped data
-def setLinks(row):
-    row['predecessor'] = row['activityNameEN'].shift(1); #lag(1)
-    row['successor'] = row['activityNameEN'].shift(-1); #lead(1)
-    return row;
+import time
+from dask import compute
+def useExecutionTime(func):
+    def compute(*args, **kwargs):
+        begin = time.time()
+
+        result = func(*args, **kwargs)
+
+        end = time.time()
+
+        return {"result": result, "execution_time": end - begin}
+
+    return compute
+
+
+@useExecutionTime
+def getComputeTime(*args, **kwargs):
+    return compute(*args, **kwargs)

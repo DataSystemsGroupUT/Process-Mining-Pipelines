@@ -12,6 +12,8 @@ services:
     ports:
       - "8888:8888"
       - "8787:8787"
+    environment:
+      - MALLOC_TRIM_THRESHOLD_=65536
     command:
       /opt/conda/bin/jupyter notebook --notebook-dir=/opt/notebooks --ip='0.0.0.0' --port=8888 --no-browser --allow-root
     tty: true
