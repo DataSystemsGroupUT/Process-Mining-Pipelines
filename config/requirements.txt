@@ -5,7 +5,7 @@ pandas
 scipy
 pyarrow
 neo4j
-pm4py == 2.2.5
+pm4py
 neo4j
 dill
 jupyter-server-proxy
