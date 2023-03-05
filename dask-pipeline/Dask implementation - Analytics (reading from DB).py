@@ -223,11 +223,11 @@ def getMetrics(log, miner, metric, net, im, fm):
         if metric == 'fitness':
             result[miner][metric] = fitness_token_based_replay(log, net, im, fm)
         elif metric == 'simplicity':
-            result[miner][metric] = simplicity_evaluator.apply(net)
+            result[miner][metric] = simplicity_evaluator.test(net,,,
         elif metric == 'precision':
             result[miner][metric] = precision_token_based_replay(log, net, im, fm,  activity_key='concept:name', case_id_key='case:concept:name', timestamp_key='time:timestamp')
         elif metric == 'generalization':
-            result[miner][metric] = generalization_evaluator.apply(log, net, im, fm)
+            result[miner][metric] = generalization_evaluator.test(log, net, im, fm)
 
         return result
     except Exception as e:
