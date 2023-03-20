@@ -58,28 +58,31 @@ def apply(log: Union[EventLog, EventStream, pd.DataFrame], net: PetriNet, markin
         raise Exception("trying to apply Align-ETConformance on a Petri net that is not a easy sound net!!")
 
     prefixes, prefix_count = precision_utils.get_log_prefixes(log, activity_key=activity_key)
-    prefixes_keys = list(prefixes.keys())
 
     start_activities = set(get_start_activities(log, parameters=parameters))
     log_length = len(log)
 
+    prefixes_keys = list(prefixes.keys())
+
+    fake_log = precision_utils.form_fake_log(prefixes_keys)
+    align_stop_marking = align_fake_log_stop_marking(fake_log, net, marking, final_marking)
+    all_markings = transform_markings_from_sync_to_original_net(align_stop_marking, net)
+
     return {
         "prefixes": prefixes,
-        "prefixes_keys": prefixes_keys,
         "prefix_count": prefix_count,
         "start_activities": start_activities,
-        "log_length": log_length
+        "log_length": log_length,
+        "all_markings": all_markings
     }
 
-def compute(prefixes, prefixes_keys, prefix_count, log_length, start_activities, net, im, fm, parameters={}):
+def compute(prefixes, prefix_count, log_length, start_activities, all_markings, net, im, fm, parameters={}):
     precision = 1.0
     sum_ee = 0
     sum_at = 0
     unfit = 0
 
-    fake_log = precision_utils.form_fake_log(prefixes_keys)
-    align_stop_marking = align_fake_log_stop_marking(fake_log, net, im, fm)
-    all_markings = transform_markings_from_sync_to_original_net(align_stop_marking, net)
+    prefixes_keys = list(prefixes.keys())
 
     for i in range(len(prefixes)):
         markings = all_markings[i]
@@ -128,15 +131,15 @@ def unionPrefixes(prefixes):
 def aggregate(firstPrecisionResult, secondPrecisionResult):
     all_prefixes = {}
     all_prefixes = unionPrefixes([firstPrecisionResult['prefixes'], secondPrecisionResult['prefixes']])
-    all_prefixes_keys = list(set(firstPrecisionResult['prefixes_keys']).union(secondPrecisionResult['prefixes_keys']))
     all_prefix_count = firstPrecisionResult['prefix_count'] + secondPrecisionResult['prefix_count']
     all_start_activities = firstPrecisionResult['start_activities'].union(secondPrecisionResult['start_activities'])
+    all_markings = firstPrecisionResult['all_markings'] + secondPrecisionResult['all_markings']
     log_length = firstPrecisionResult['log_length'] + secondPrecisionResult['log_length']
 
     return {
         "prefixes": all_prefixes,
-        "prefixes_keys": all_prefixes_keys,
         "prefix_count": all_prefix_count,
         "log_length": log_length,
         "start_activities": all_start_activities,
+        "all_markings": all_markings
     }

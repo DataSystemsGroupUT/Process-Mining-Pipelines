@@ -45,7 +45,7 @@ class Parameters(Enum):
     ACTIVITY_KEY = constants.PARAMETER_CONSTANT_ACTIVITY_KEY
 
 
-def compute(aligned_traces, petri_net):
+def compute(aligned_traces, net):
     """
     Gets the generalization from the Petri net and the list of activated transitions
     during the replay
@@ -64,7 +64,7 @@ def compute(aligned_traces, petri_net):
 
     Parameters
     -----------
-    petri_net
+    net
         Petri net
     aligned_traces
         Result of the token-replay
@@ -83,12 +83,12 @@ def compute(aligned_traces, petri_net):
     for trans in trans_occ_map:
         this_term = 1.0 / sqrt(trans_occ_map[trans])
         inv_sq_occ_sum = inv_sq_occ_sum + this_term
-    for trans in petri_net.transitions:
+    for trans in net.transitions:
         if trans not in trans_occ_map:
             inv_sq_occ_sum = inv_sq_occ_sum + 1
     generalization = 1.0
-    if len(petri_net.transitions) > 0:
-        generalization = 1.0 - inv_sq_occ_sum / float(len(petri_net.transitions))
+    if len(net.transitions) > 0:
+        generalization = 1.0 - inv_sq_occ_sum / float(len(net.transitions))
     return generalization
 
 
