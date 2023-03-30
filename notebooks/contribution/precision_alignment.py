@@ -11,6 +11,8 @@ import pandas as pd
 from pm4py.algo.evaluation.precision.variants.align_etconformance import align_fake_log_stop_marking, transform_markings_from_sync_to_original_net
 from enum import Enum
 from pm4py.util import constants
+import dask
+from dask.diagnostics import ProgressBar
 
 """
     In order to use precision, there are 3 functions need to be executed in the following order:
@@ -62,21 +64,14 @@ def apply(log: Union[EventLog, EventStream, pd.DataFrame], net: PetriNet, markin
     start_activities = set(get_start_activities(log, parameters=parameters))
     log_length = len(log)
 
-    prefixes_keys = list(prefixes.keys())
-
-    fake_log = precision_utils.form_fake_log(prefixes_keys)
-    align_stop_marking = align_fake_log_stop_marking(fake_log, net, marking, final_marking)
-    all_markings = transform_markings_from_sync_to_original_net(align_stop_marking, net)
-
     return {
         "prefixes": prefixes,
         "prefix_count": prefix_count,
         "start_activities": start_activities,
-        "log_length": log_length,
-        "all_markings": all_markings
+        "log_length": log_length
     }
 
-def compute(prefixes, prefix_count, log_length, start_activities, all_markings, net, im, fm, parameters={}):
+def compute(prefixes, prefix_count, log_length, start_activities, net, im, fm, parameters={}):
     precision = 1.0
     sum_ee = 0
     sum_at = 0
@@ -84,25 +79,39 @@ def compute(prefixes, prefix_count, log_length, start_activities, all_markings, 
 
     prefixes_keys = list(prefixes.keys())
 
-    for i in range(len(prefixes)):
-        markings = all_markings[i]
+    def process_prefix(prefix):
+        markings = transform_markings_from_sync_to_original_net(
+            align_fake_log_stop_marking(precision_utils.form_fake_log([prefix]), net, im, fm),
+            net
+        )[0]
 
         if markings is not None:
-            log_transitions = set(prefixes[prefixes_keys[i]])
+            log_transitions = set(prefixes[prefix])
             activated_transitions_labels = set()
             for m in markings:
-                # add to the set of activated transitions in the model the activated transitions
-                # for each prefix
                 activated_transitions_labels = activated_transitions_labels.union(
                     x.label for x in utils.get_visible_transitions_eventually_enabled_by_marking(net, m) if
                     x.label is not None)
             escaping_edges = activated_transitions_labels.difference(log_transitions)
 
-            sum_at += len(activated_transitions_labels) * prefix_count[prefixes_keys[i]]
-            sum_ee += len(escaping_edges) * prefix_count[prefixes_keys[i]]
+            return len(activated_transitions_labels) * prefix_count[prefix], \
+                   len(escaping_edges) * prefix_count[prefix], 0
 
         else:
-            unfit += prefix_count[prefixes_keys[i]]
+            return 0, 0, prefix_count[prefix]
+
+    tasks = []
+    for i in prefixes_keys:
+        tasks.append(dask.delayed(process_prefix)(i))
+
+    with ProgressBar():
+        results = dask.compute(*tasks)
+    # results = db.from_sequence(range(len(prefixes)), npartitions=len(prefixes)).map(process_prefix).compute()
+
+    for r in results:
+        sum_at += r[0]
+        sum_ee += r[1]
+        unfit += r[2]
 
     # fix: also the empty prefix should be counted!
     trans_en_ini_marking = set([x.label for x in get_visible_transitions_eventually_enabled_by_marking(net, im)])
@@ -133,7 +142,6 @@ def aggregate(firstPrecisionResult, secondPrecisionResult):
     all_prefixes = unionPrefixes([firstPrecisionResult['prefixes'], secondPrecisionResult['prefixes']])
     all_prefix_count = firstPrecisionResult['prefix_count'] + secondPrecisionResult['prefix_count']
     all_start_activities = firstPrecisionResult['start_activities'].union(secondPrecisionResult['start_activities'])
-    all_markings = firstPrecisionResult['all_markings'] + secondPrecisionResult['all_markings']
     log_length = firstPrecisionResult['log_length'] + secondPrecisionResult['log_length']
 
     return {
@@ -141,5 +149,4 @@ def aggregate(firstPrecisionResult, secondPrecisionResult):
         "prefix_count": all_prefix_count,
         "log_length": log_length,
         "start_activities": all_start_activities,
-        "all_markings": all_markings
     }
