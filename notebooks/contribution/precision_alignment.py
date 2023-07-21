@@ -14,6 +14,7 @@ from pm4py.util import constants
 import dask
 from dask.diagnostics import ProgressBar
 
+from pm4py.algo.evaluation.generalization import algorithm as generalization
 """
     In order to use precision, there are 3 functions need to be executed in the following order:
     - apply (takes partition by partition)
@@ -138,6 +139,9 @@ def unionPrefixes(prefixes):
 
 # needs some work
 def aggregate(firstPrecisionResult, secondPrecisionResult):
+    if firstPrecisionResult.get('error') != None or secondPrecisionResult.get('error') != None:
+        return firstPrecisionResult
+
     all_prefixes = {}
     all_prefixes = unionPrefixes([firstPrecisionResult['prefixes'], secondPrecisionResult['prefixes']])
     all_prefix_count = firstPrecisionResult['prefix_count'] + secondPrecisionResult['prefix_count']

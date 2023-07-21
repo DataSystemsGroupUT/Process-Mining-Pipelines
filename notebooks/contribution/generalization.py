@@ -25,8 +25,6 @@ from pm4py.util import constants
 from typing import Optional, Dict, Any, Union, Tuple
 from pm4py.objects.log.obj import EventLog, EventStream
 from pm4py.objects.petri_net.obj import PetriNet, Marking
-import pandas as pd
-
 
 """
     In order to use generalization, there are 3 functions need to be executed in the following order:
@@ -45,7 +43,7 @@ class Parameters(Enum):
     ACTIVITY_KEY = constants.PARAMETER_CONSTANT_ACTIVITY_KEY
 
 
-def compute(aligned_traces, net):
+def compute(trans_occ_map, petri_net):
     """
     Gets the generalization from the Petri net and the list of activated transitions
     during the replay
@@ -74,21 +72,17 @@ def compute(aligned_traces, net):
     generalization
         Generalization measure
     """
-
-    trans_occ_map = Counter()
-    for trace in aligned_traces:
-        for trans in trace["activated_transitions"]:
-            trans_occ_map[trans] += 1
     inv_sq_occ_sum = 0.0
     for trans in trans_occ_map:
         this_term = 1.0 / sqrt(trans_occ_map[trans])
         inv_sq_occ_sum = inv_sq_occ_sum + this_term
-    for trans in net.transitions:
+    for trans in petri_net.transitions:
         if trans not in trans_occ_map:
             inv_sq_occ_sum = inv_sq_occ_sum + 1
     generalization = 1.0
-    if len(net.transitions) > 0:
-        generalization = 1.0 - inv_sq_occ_sum / float(len(net.transitions))
+
+    if len(petri_net.transitions) > 0:
+        generalization = 1.0 - inv_sq_occ_sum / len(petri_net.transitions)
     return generalization
 
 
@@ -135,14 +129,19 @@ def apply(log: EventLog, petri_net: PetriNet, initial_marking: Marking, final_ma
 
     aligned_traces = token_replay.apply(log, petri_net, initial_marking, final_marking, parameters=parameters_tr)
 
+    trans_occ_map = Counter()
+    for trace in aligned_traces:
+        for trans in trace["activated_transitions"]:
+            trans_occ_map[trans] += 1
+
     return {
-        "aligned_traces": aligned_traces
+        "trans_occ_map": trans_occ_map
     }
 
 
-def aggregate(aligned_traces):
-    all_aligned_traces = []
-    for traces in aligned_traces:
-        all_aligned_traces += traces['aligned_traces']
+def aggregate(generalizationResults):
+    all_trans_occ_map = Counter()
+    for trans_occ_map in generalizationResults:
+        all_trans_occ_map += trans_occ_map['trans_occ_map']
 
-    return {"aligned_traces": all_aligned_traces}
+    return {"trans_occ_map": all_trans_occ_map}
